@@ -20,13 +20,18 @@ var stats = document.querySelector('#stats-section');
 var gameOverBox = document.querySelector('#game-over-section');
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count');
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural');
+var statsGamesPlayed = document.querySelector('#stats-total-games')
+var statsPercentCorrect = document.querySelector('#stats-percent-correct')
+var statsAverageGuesses = document.querySelector('#stats-average-guesses')
+
+
 var gameOverLose = document.querySelector('#game-over-lose-section')
 
 // Event Listeners
 window.addEventListener('load', getWords);
 
 for (var i = 0; i < inputs.length; i++) {
-  inputs[i].addEventListener('keyup', function() { moveToNextInput(event) });
+  inputs[i].addEventListener('keyup', function() { moveToNextInput(event) }); // error bug
 }
 
 for (var i = 0; i < keyLetters.length; i++) {
@@ -71,7 +76,7 @@ function moveToNextInput(e) {
 
   if( key !== 8 && key !== 46 ) {
     var indexOfNext = parseInt(e.target.id.split('-')[2]) + 1;
-    inputs[indexOfNext].focus();
+    inputs[indexOfNext].focus(); //error bug cannot read undefined reading focus
   }
 }
 
@@ -97,7 +102,6 @@ function submitGuess(words) {
     if (checkForWin()) {
       setTimeout(processGameEnd(true), 1000);
     } else if(!checkForWin(true) && currentRow === 6){
-      console.log('You lose!')
       setTimeout(processGameEnd(false), 3000)
     } else {
       changeRow();
@@ -172,14 +176,47 @@ function changeRow() {
 }
 
 function processGameEnd(wonGame) {
-  recordGameStats();
+  recordGameStats(wonGame);
   changeGameOverText(wonGame);
   viewGameOverMessage(wonGame);
   setTimeout(startNewGame, 4000);
 }
 
-function recordGameStats() {
+function findPercentCorrect() {
+  let solved = gamesPlayed.filter((game) => {
+    return game.solved === true;
+  }).length
+  let totalPlays = gamesPlayed.length
+  let percentCorrect = (solved / totalPlays) * 100
+  return percentCorrect
+}
+
+function findAverageGuesses() {
+  let correctGuesses = gamesPlayed.filter((guess) => {
+    return guess.solved === true
+  })
+  let guesses = correctGuesses.map((guess) => {
+    return guess.guesses
+  }).reduce((acc, int) => {
+    acc += int
+    return acc
+  }, 0)
+  let average = Math.round(guesses / gamesPlayed.length)
+  return average
+}
+
+//current-working
+function recordGameStats(wonGame) {
+  if(wonGame){
   gamesPlayed.push({ solved: true, guesses: currentRow });
+  let averageGuesses = findAverageGuesses()
+  statsAverageGuesses.innerText = averageGuesses
+  } else {
+    gamesPlayed.push({ solved: false, guesses: currentRow });
+  }
+  let percentCorrect = findPercentCorrect()
+  statsGamesPlayed.innerText = gamesPlayed.length
+  statsPercentCorrect.innerText = percentCorrect
 }
 
 function changeGameOverText() {
