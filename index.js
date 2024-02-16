@@ -3,6 +3,7 @@ var winningWord = '';
 var currentRow = 1;
 var guess = '';
 var gamesPlayed = [];
+var words = []
 
 // Query Selectors
 var inputs = document.querySelectorAll('input');
@@ -19,9 +20,10 @@ var stats = document.querySelector('#stats-section');
 var gameOverBox = document.querySelector('#game-over-section');
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count');
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural');
+var gameOverLose = document.querySelector('#game-over-lose-section')
 
 // Event Listeners
-window.addEventListener('load', setGame);
+window.addEventListener('load', getWords);
 
 for (var i = 0; i < inputs.length; i++) {
   inputs[i].addEventListener('keyup', function() { moveToNextInput(event) });
@@ -40,13 +42,14 @@ viewGameButton.addEventListener('click', viewGame);
 viewStatsButton.addEventListener('click', viewStats);
 
 // Functions
-function setGame() {
+
+function setGame(words) {
   currentRow = 1;
-  winningWord = getRandomWord();
+  winningWord = getRandomWord(words);
   updateInputPermissions();
 }
 
-function getRandomWord() {
+function getRandomWord(words) {
   var randomIndex = Math.floor(Math.random() * 2500);
   return words[randomIndex];
 }
@@ -87,12 +90,15 @@ function clickLetter(e) {
   inputs[activeIndex + 1].focus();
 }
 
-function submitGuess() {
-  if (checkIsWord()) {
+function submitGuess(words) {
+  if (checkIsWord(words)) {
     errorMessage.innerText = '';
     compareGuess();
     if (checkForWin()) {
-      setTimeout(declareWinner, 1000);
+      setTimeout(processGameEnd(true), 1000);
+    } else if(!checkForWin(true) && currentRow === 6){
+      console.log('You lose!')
+      setTimeout(processGameEnd(false), 3000)
     } else {
       changeRow();
     }
@@ -165,10 +171,10 @@ function changeRow() {
   updateInputPermissions();
 }
 
-function declareWinner() {
+function processGameEnd(wonGame) {
   recordGameStats();
-  changeGameOverText();
-  viewGameOverMessage();
+  changeGameOverText(wonGame);
+  viewGameOverMessage(wonGame);
   setTimeout(startNewGame, 4000);
 }
 
@@ -178,17 +184,17 @@ function recordGameStats() {
 
 function changeGameOverText() {
   gameOverGuessCount.innerText = currentRow;
-  if (currentRow < 2) {
-    gameOverGuessGrammar.classList.add('collapsed');
-  } else {
-    gameOverGuessGrammar.classList.remove('collapsed');
+    if (currentRow < 2) {
+      gameOverGuessGrammar.classList.add('collapsed');
+    } else {
+      gameOverGuessGrammar.classList.remove('collapsed');
+    }
   }
-}
 
 function startNewGame() {
   clearGameBoard();
   clearKey();
-  setGame();
+  getWords();
   viewGame();
   inputs[0].focus();
 }
@@ -224,6 +230,7 @@ function viewGame() {
   rules.classList.add('collapsed');
   stats.classList.add('collapsed');
   gameOverBox.classList.add('collapsed')
+  gameOverLose.classList.add('collapsed')
   viewGameButton.classList.add('active');
   viewRulesButton.classList.remove('active');
   viewStatsButton.classList.remove('active');
@@ -239,8 +246,12 @@ function viewStats() {
   viewStatsButton.classList.add('active');
 }
 
-function viewGameOverMessage() {
+function viewGameOverMessage(wonGame) {
+  if(wonGame) {
   gameOverBox.classList.remove('collapsed')
+  } else {
+    gameOverLose.classList.remove('collapsed')
+  }
   letterKey.classList.add('hidden');
   gameBoard.classList.add('collapsed');
 }
